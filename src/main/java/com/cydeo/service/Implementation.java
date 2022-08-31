@@ -4,10 +4,10 @@ package com.cydeo.service;
 import com.cydeo.model.*;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.cydeo.service.DataGenerator.findUserById;
+import static com.cydeo.service.DataGenerator.*;
 
 
 public class Implementation {
@@ -19,10 +19,12 @@ public class Implementation {
      * @return all the student users {@link User} and {@link Role}
      */
     public static List<User> readAllStudents() {
-        //TODO
-        return null;
-    }
 
+        return fillUsers().stream()
+                .filter(user -> user.getRole().getName().equalsIgnoreCase("student"))
+                .collect(Collectors.toList());
+
+    }
 
     /**
      * Read all admin users.
@@ -31,8 +33,10 @@ public class Implementation {
      */
 
     public static List<User> readAllAdmins() {
-        //TODO
-        return null;
+
+        return fillUsers().stream()
+                .filter(user -> user.getRole().getName().equalsIgnoreCase("ADMIN"))
+                .collect(Collectors.toList());
 
     }
 
@@ -42,8 +46,9 @@ public class Implementation {
      * @return all the manager users {@link User} and {@link Role}
      */
     public static List<User> readAllManagers() {
-        //TODO
-        return null;
+        return fillUsers().stream()
+                .filter(user -> user.getRole().getName().equalsIgnoreCase("manager"))
+                .collect(Collectors.toList());
 
     }
 
@@ -53,8 +58,9 @@ public class Implementation {
      * @return all the suspended users {@link User} and {@link UserState}
      */
     public static List<User> readAllSuspendedUsers() {
-        //TODO
-        return null;
+        return fillUsers().stream()
+                .filter(user -> user.getState().name().equalsIgnoreCase("SUSPENDED"))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -63,8 +69,10 @@ public class Implementation {
      * @return all the confirmed users {@link User} and {@link UserState}
      */
     public static List<User> readAllConfirmedUsers() {
-        //TODO
-        return null;
+
+        return fillUsers().stream()
+                .filter(user -> user.getState().name().equalsIgnoreCase("CONFIRMED"))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -73,10 +81,10 @@ public class Implementation {
      * @return all the pending users {@link User} and {@link UserState}
      */
     public static List<User> readAllPendingUsers() {
-        //TODO
-        return null;
+        return fillUsers().stream()
+                .filter(user -> user.getState().name().equalsIgnoreCase("PENDING"))
+                .collect(Collectors.toList());
     }
-
 
     /**
      * Count all courses.
@@ -84,8 +92,7 @@ public class Implementation {
      * @return number of courses {@link Course}
      */
     public static Long countCourses() {
-        //TODO
-        return null;
+        return(long) fillCourses().size();
 
     }
 
@@ -96,8 +103,10 @@ public class Implementation {
      * @return sum of duration {@link Course}.
      */
     public static Integer sumDurationForAllData() {
-        //TODO
-        return null;
+        return fillCourses().stream()
+                .map(course -> course.getDuration())
+                .reduce(Integer::sum)
+                .get();
     }
 
     /**
@@ -108,8 +117,10 @@ public class Implementation {
      */
     public static List<Course> findCoursesByUserId(Integer id) {
         User specificUser = findUserById(id);
-        //TODO
-        return null;
+        return fillCoursesAssigned().stream()
+                .filter(courseAssigned -> courseAssigned.getUser().equals(specificUser))
+                .map(CourseAssigned::getCourse)
+                .collect(Collectors.toList());
     }
 
 
@@ -121,8 +132,9 @@ public class Implementation {
      * @return converted duration to week. {@link BigDecimal}
      */
     public static Integer divideToWeek(Integer id) {
-        //TODO
-        return null;
+        return fillCoursesAssigned().stream()
+                .filter(p -> p.getUser().equals(findUserById(id)))
+                .map(p -> p.getCourse().getDuration()).mapToInt(Integer::intValue).sum()/40;
 
     }
 
@@ -135,7 +147,9 @@ public class Implementation {
      */
     public static Map<CourseStatus, Long> countCoursesByStatus() {
         //TODO
-        return null;
+        return fillCoursesAssigned().stream()
+                .collect(Collectors.groupingBy(CourseAssigned::getStatus,Collectors.counting()));
+
     }
 
     /**
@@ -147,7 +161,16 @@ public class Implementation {
 
     public static Map<String, Integer> getMinMaxCourseDuration() {
         //TODO
-        return null;
+        return fillCourses().stream().collect(Collectors.teeing(
+        Collectors.maxBy(Comparator.comparing(Course::getDuration)),
+                (Collectors.minBy(Comparator.comparing(Course::getDuration))),
+                (r1,r2)->{
+                    Map<String,Integer> map = new HashMap<>();
+                    map.put("Max Duration",r1.get().getDuration());
+                    map.put("Min Duration",r2.get().getDuration());
+                    return map;
+    }
+        ));
     }
 
     /**
@@ -158,7 +181,9 @@ public class Implementation {
      */
     public static User findFirstWithFirstName() {
         //TODO
-        return null;
+        return fillUsers().stream()
+                .filter(user -> user.getFirstName().startsWith("J"))
+                .findAny().get();
     }
 
     /**
@@ -168,10 +193,12 @@ public class Implementation {
      *
      * @return the first user depending on first name
      */
-    public static User findAnyWithLastName() {
+    public static User findAnyWithLastName(){
         //TODO
-        return null;
-    }
+        return fillUsers().stream()
+                .filter(user -> user.getLastName().equalsIgnoreCase("Wooden"))
+                .findFirst().orElseThrow(()->new NoSuchElementException("No user exists"));
+        }
 
     /**
      * This method partitions the users
@@ -181,7 +208,8 @@ public class Implementation {
      */
     public static Map<Boolean, List<User>> partitionOfConfirmedUsers() {
         //TODO
-        return null;
+        return fillUsers().stream()
+                .collect(Collectors.partitioningBy(user -> user.getState().equals(UserState.CONFIRMED)));
     }
 
     /**
@@ -193,6 +221,7 @@ public class Implementation {
 
     public static Map<CourseStatus, List<CourseAssigned>> groupOfCourseAssigned() {
         //TODO
-        return null;
+        return fillCoursesAssigned().stream()
+                .collect(Collectors.groupingBy(CourseAssigned::getStatus));
     }
 }
